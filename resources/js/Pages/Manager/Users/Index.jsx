@@ -1,5 +1,5 @@
 import ManagerLayout from '@/Layouts/ManagerLayout';
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 
 const roleLabels = {
@@ -20,6 +20,7 @@ const inputCls =
     'w-full rounded-lg border-slate-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500';
 
 export default function Index({ users, filters, rooms }) {
+    const { auth } = usePage().props;
     const [search, setSearch] = useState(filters.search || '');
     const [role, setRole] = useState(filters.role || '');
     const [status, setStatus] = useState(filters.status || '');
@@ -29,6 +30,20 @@ export default function Index({ users, filters, rooms }) {
     const debounceRef = useRef(null);
 
     const hasFilters = search || role || status;
+
+    /**
+     * Mirrors the backend guards in UserController@update/@destroy:
+     * - principal manager's account: only the principal themself
+     * - a secondary manager's account: only the principal, or that same secondary manager
+     * - everyone else (teacher/student): anyone with the relevant Gate permission
+     */
+    const canManageThisUser = (user) => {
+        if (user.role === 'principal_manager') return auth.user.id === user.id;
+        if (user.role === 'secondary_manager') {
+            return auth.user.id === user.id || auth.user.role === 'principal_manager';
+        }
+        return true;
+    };
 
     const applyFilters = (overrides = {}) => {
         router.get(
@@ -166,99 +181,109 @@ export default function Index({ users, filters, rooms }) {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {users.data.map((user) => (
-                                    <tr key={user.id} className="transition hover:bg-slate-50">
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-3">
-                                                <Avatar name={user.name} />
-                                                <div className="min-w-0">
-                                                    <div className="truncate font-medium text-slate-900">
-                                                        {user.name}{' '}
-                                                        <span className="font-normal text-slate-400">#{user.id}</span>
+                                {users.data.map((user) => {
+                                    const manageable = canManageThisUser(user);
+
+                                    return (
+                                        <tr key={user.id} className="transition hover:bg-slate-50">
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar name={user.name} />
+                                                    <div className="min-w-0">
+                                                        <div className="truncate font-medium text-slate-900">
+                                                            {user.name}{' '}
+                                                            <span className="font-normal text-slate-400">#{user.id}</span>
+                                                        </div>
+                                                        <div className="truncate text-xs text-slate-500">{user.email}</div>
                                                     </div>
-                                                    <div className="truncate text-xs text-slate-500">{user.email}</div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="whitespace-nowrap px-4 py-3 text-slate-700">
-                                            {roleLabels[user.role] ?? user.role}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span
-                                                className={
-                                                    'inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ring-1 ring-inset ' +
-                                                    (statusStyles[user.status] ?? statusStyles.disabled)
-                                                }
-                                            >
-                                                {user.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3 text-slate-700">
-                                            {user.role === 'student' ? (
-                                                user.room ? (
-                                                    <span>{user.room.name}</span>
+                                            </td>
+                                            <td className="whitespace-nowrap px-4 py-3 text-slate-700">
+                                                {roleLabels[user.role] ?? user.role}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span
+                                                    className={
+                                                        'inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ring-1 ring-inset ' +
+                                                        (statusStyles[user.status] ?? statusStyles.disabled)
+                                                    }
+                                                >
+                                                    {user.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-slate-700">
+                                                {user.role === 'student' ? (
+                                                    user.room ? (
+                                                        <span>{user.room.name}</span>
+                                                    ) : (
+                                                        <span className="text-slate-400">Unassigned</span>
+                                                    )
                                                 ) : (
-                                                    <span className="text-slate-400">Unassigned</span>
-                                                )
-                                            ) : (
-                                                <span className="text-slate-300">—</span>
-                                            )}
-                                        </td>
-                                        <td className="whitespace-nowrap px-4 py-3 text-right">
-                                            {user.status === 'pending' && (
-                                                <>
+                                                    <span className="text-slate-300">—</span>
+                                                )}
+                                            </td>
+                                            <td className="whitespace-nowrap px-4 py-3 text-right">
+                                                {user.status === 'pending' && manageable && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => acceptUser(user)}
+                                                            className="rounded-md px-2 py-1 text-sm font-medium text-emerald-600 hover:bg-emerald-50"
+                                                        >
+                                                            Accept
+                                                        </button>
+                                                        <button
+                                                            onClick={() => rejectUser(user)}
+                                                            className="rounded-md px-2 py-1 text-sm font-medium text-rose-600 hover:bg-rose-50"
+                                                        >
+                                                            Reject
+                                                        </button>
+                                                    </>
+                                                )}
+
+                                                {(user.status === 'active' || user.status === 'disabled') &&
+                                                    user.role !== 'principal_manager' &&
+                                                    manageable && (
+                                                        <button
+                                                            onClick={() => toggleStatus(user)}
+                                                            className={
+                                                                'rounded-md px-2 py-1 text-sm font-medium hover:bg-slate-100 ' +
+                                                                (user.status === 'active' ? 'text-slate-600' : 'text-emerald-600')
+                                                            }
+                                                        >
+                                                            {user.status === 'active' ? 'Disable' : 'Activate'}
+                                                        </button>
+                                                    )}
+
+                                                {user.role === 'student' && (
                                                     <button
-                                                        onClick={() => acceptUser(user)}
+                                                        onClick={() => setAssigningStudent(user)}
                                                         className="rounded-md px-2 py-1 text-sm font-medium text-emerald-600 hover:bg-emerald-50"
                                                     >
-                                                        Accept
-                                                    </button>
-                                                    <button
-                                                        onClick={() => rejectUser(user)}
-                                                        className="rounded-md px-2 py-1 text-sm font-medium text-rose-600 hover:bg-rose-50"
-                                                    >
-                                                        Reject
-                                                    </button>
-                                                </>
-                                            )}
-
-                                            {(user.status === 'active' || user.status === 'disabled') &&
-                                                user.role !== 'principal_manager' && (
-                                                    <button
-                                                        onClick={() => toggleStatus(user)}
-                                                        className={
-                                                            'rounded-md px-2 py-1 text-sm font-medium hover:bg-slate-100 ' +
-                                                            (user.status === 'active' ? 'text-slate-600' : 'text-emerald-600')
-                                                        }
-                                                    >
-                                                        {user.status === 'active' ? 'Disable' : 'Activate'}
+                                                        {user.room ? 'Change room' : 'Assign room'}
                                                     </button>
                                                 )}
 
-                                            {user.role === 'student' && (
-                                                <button
-                                                    onClick={() => setAssigningStudent(user)}
-                                                    className="rounded-md px-2 py-1 text-sm font-medium text-emerald-600 hover:bg-emerald-50"
-                                                >
-                                                    {user.room ? 'Change room' : 'Assign room'}
-                                                </button>
-                                            )}
+                                                {manageable && (
+                                                    <button
+                                                        onClick={() => setEditingUser(user)}
+                                                        className="rounded-md px-2 py-1 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                )}
 
-                                            <button
-                                                onClick={() => setEditingUser(user)}
-                                                className="rounded-md px-2 py-1 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
-                                            >
-                                                Edit
-                                            </button>
-                                            <button
-                                                onClick={() => destroy(user)}
-                                                className="rounded-md px-2 py-1 text-sm font-medium text-rose-600 hover:bg-rose-50"
-                                            >
-                                                Delete
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
+                                                {user.role !== 'principal_manager' && manageable && (
+                                                    <button
+                                                        onClick={() => destroy(user)}
+                                                        className="rounded-md px-2 py-1 text-sm font-medium text-rose-600 hover:bg-rose-50"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
 
                                 {users.data.length === 0 && (
                                     <tr>
@@ -324,6 +349,10 @@ function CreateUserModal({ onClose }) {
         name: '',
         email: '',
         role: 'student',
+        can_view: true,
+        can_create: false,
+        can_update: false,
+        can_delete: false,
     });
 
     const submit = (e) => {
@@ -365,6 +394,25 @@ function CreateUserModal({ onClose }) {
                         <option value="secondary_manager">Secondary manager</option>
                     </select>
                 </Field>
+
+                {data.role === 'secondary_manager' && (
+                    <div className="mb-4 rounded-lg border border-slate-200 p-3">
+                        <div className="mb-2 text-sm font-medium text-slate-700">Permissions</div>
+                        <div className="grid grid-cols-2 gap-2">
+                            {['can_view', 'can_create', 'can_update', 'can_delete'].map((perm) => (
+                                <label key={perm} className="flex items-center gap-2 text-sm text-slate-700">
+                                    <input
+                                        type="checkbox"
+                                        checked={data[perm]}
+                                        onChange={(e) => setData(perm, e.target.checked)}
+                                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                    />
+                                    {perm.replace('can_', '').replace(/^\w/, (c) => c.toUpperCase())}
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 <ModalActions onClose={onClose} processing={processing} label="Create user" />
             </form>

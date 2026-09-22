@@ -125,4 +125,5 @@ class User extends Authenticatable
             default => 'manager.dashboard', // temporary fallback until those exist
         };
     }
+  
 }

@@ -23,12 +23,15 @@ use App\Models\Room;
 
 class UserController extends Controller
 {
-  public function index(Request $request): Response
+ public function index(Request $request): Response
 {
     Gate::authorize('view');
 
     $users = User::query()
         ->with('room:id,name,capacity')
+        ->when(! $request->user()->isPrincipalManager(), fn ($q) =>
+            $q->where('role', '!=', Role::PrincipalManager->value)
+        )
         ->when($request->search, fn ($q, $search) =>
             $q->where(fn ($q) => $q
                 ->where('name', 'like', "%{$search}%")
@@ -49,68 +52,94 @@ class UserController extends Controller
 }
 
     public function store(Request $request): RedirectResponse
-    {
-        Gate::authorize('create');
+{
+    Gate::authorize('create');
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'role' => ['required', Rule::in([
-                Role::SecondaryManager->value,
-                Role::Teacher->value,
-                Role::Student->value,
-            ])],
-        ]);
+    $validated = $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+        'role' => ['required', Rule::in([
+            Role::SecondaryManager->value,
+            Role::Teacher->value,
+            Role::Student->value,
+        ])],
+        'can_view' => ['boolean'],
+        'can_create' => ['boolean'],
+        'can_update' => ['boolean'],
+        'can_delete' => ['boolean'],
+    ]);
 
-        // Beyond the Gate: creating a manager is a stricter rule than the
-        // generic "create" permission, so it's checked on top of the Gate.
-        if ($validated['role'] === Role::SecondaryManager->value && ! $request->user()->isPrincipalManager()) {
-            abort(403, 'Only the principal manager can create secondary managers.');
-        }
-
-        $temporaryPassword = Str::password(12);
-
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($temporaryPassword),
-            'role' => $validated['role'],
-            'status' => UserStatus::Active,
-            'must_change_password' => true,
-        ]);
-
-        Mail::to($user)->queue(new WelcomeEmail($user, $temporaryPassword));
-
-        return back()->with('status', "Account created for {$user->name}.");
+    if ($validated['role'] === Role::SecondaryManager->value && ! $request->user()->isPrincipalManager()) {
+        abort(403, 'Only the principal manager can create secondary managers.');
     }
 
-    public function update(Request $request, User $user): RedirectResponse
-    {
-        Gate::authorize('update');
+    $temporaryPassword = Str::password(12);
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+    $user = User::create([
+        'name' => $validated['name'],
+        'email' => $validated['email'],
+        'password' => Hash::make($temporaryPassword),
+        'role' => $validated['role'],
+        'status' => UserStatus::Active,
+        'must_change_password' => true,
+    ]);
+
+    if ($validated['role'] === Role::SecondaryManager->value) {
+        $user->permissions()->create([
+            'can_view' => $validated['can_view'] ?? false,
+            'can_create' => $validated['can_create'] ?? false,
+            'can_update' => $validated['can_update'] ?? false,
+            'can_delete' => $validated['can_delete'] ?? false,
         ]);
-
-        $user->update($validated);
-
-        return back()->with('status', 'User updated.');
     }
 
-    public function destroy(Request $request, User $user): RedirectResponse
-    {
-        Gate::authorize('delete');
+    Mail::to($user)->queue(new WelcomeEmail($user, $temporaryPassword));
 
-        // Beyond the Gate: only the principal manager may delete accounts at all
-        if (! $request->user()->isPrincipalManager()) {
-            abort(403, 'Only the principal manager can delete users.');
-        }
+    return back()->with('status', "Account created for {$user->name}.");
+}
 
-        $user->delete(); // soft delete
+ public function update(Request $request, User $user): RedirectResponse
+{
+    Gate::authorize('update');
 
-        return back()->with('status', 'User deleted.');
+    $actingUser = $request->user();
+
+    if ($user->role === Role::PrincipalManager && ! $actingUser->is($user)) {
+        abort(403, "You can't modify the principal manager's account.");
     }
+
+    if ($user->role === Role::SecondaryManager
+        && ! $actingUser->is($user)
+        && ! $actingUser->isPrincipalManager()) {
+        abort(403, 'Only the principal manager can manage secondary manager accounts.');
+    }
+
+    $validated = $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+    ]);
+
+    $user->update($validated);
+
+    return back()->with('status', 'User updated.');
+}
+
+public function destroy(Request $request, User $user): RedirectResponse
+{
+    Gate::authorize('delete');
+
+    if (! $request->user()->isPrincipalManager()) {
+        abort(403, 'Only the principal manager can delete users.');
+    }
+
+    if ($user->role === Role::PrincipalManager) {
+        abort(403, "The principal manager's account can't be deleted.");
+    }
+
+    $user->delete();
+
+    return back()->with('status', 'User deleted.');
+}
 
     public function accept(Request $request, User $user): RedirectResponse
     {

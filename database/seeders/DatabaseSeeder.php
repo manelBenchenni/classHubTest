@@ -21,5 +21,9 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+         $this->call([
+        PrincipalManagerSeeder::class,
+        // secondary managers, teachers, students seeders will go here later (step 14)
+    ]);
     }
 }

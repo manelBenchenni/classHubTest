@@ -13,6 +13,9 @@ use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Validation\Rule;
+use App\Enums\Role;
+use App\Enums\UserStatus;
 
 class RegisteredUserController extends Controller
 {
@@ -29,24 +32,26 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+   
+public function store(Request $request): RedirectResponse
+{
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+        'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        'role' => ['required', Rule::in([Role::Teacher->value, Role::Student->value])],
+    ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+    $user = User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'password' => Hash::make($request->password),
+        'role' => $request->role,
+        'status' => UserStatus::Pending,
+    ]);
 
-        event(new Registered($user));
+    // event(new NewRegistration($user)); 
 
-        Auth::login($user);
-
-        return redirect(route('dashboard', absolute: false));
-    }
+    return redirect()->route('login')->with('status', 'Your account is pending approval.');
+}
 }

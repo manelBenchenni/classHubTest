@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+          then: function () {
+        Route::middleware('web')->group(base_path('routes/manager.php'));
+    },
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
@@ -15,6 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+        ]);
+
+          $middleware->alias([
+            'active' => \App\Http\Middleware\EnsureUserIsActive::class,
+            'role' => \App\Http\Middleware\EnsureUserHasRole::class,
         ]);
 
         //

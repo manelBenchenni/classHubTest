@@ -1,5 +1,5 @@
 import StudentLayout from '@/Layouts/StudentLayout';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 
 const dayLabels = {
     1: 'Monday',
@@ -22,13 +22,21 @@ export default function Dashboard({ room, schedules }) {
             <Head title="Student Dashboard" />
 
             <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-                <div className="mb-6">
-                    <h1 className="text-2xl font-semibold tracking-tight">
-                        {room ? room.name : 'My schedule'}
-                    </h1>
-                    <p className="mt-1 text-sm text-slate-500">
-                        {room ? 'Your room and weekly schedule.' : "You haven't been assigned to a room yet."}
-                    </p>
+                <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl font-semibold tracking-tight">
+                            {room ? room.name : 'My schedule'}
+                        </h1>
+                        <p className="mt-1 text-sm text-slate-500">
+                            {room ? 'Your room and weekly schedule.' : "You haven't been assigned to a room yet."}
+                        </p>
+                    </div>
+                    <Link
+                        href={route('student.absences.index')}
+                        className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-50"
+                    >
+                        View absences
+                    </Link>
                 </div>
 
                 {!room && (

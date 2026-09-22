@@ -3,12 +3,26 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Attendance extends Model
 {
-    protected $fillable = ['schedule_id', 'student_id', 'date', 'status', 'marked_by']; 
-protected $casts = ['date' => 'date'];
+    protected $fillable = ['schedule_id', 'student_id', 'date', 'status', 'marked_by'];
 
-public function schedule(): BelongsTo { return $this->belongsTo(Schedule::class); }
-public function student(): BelongsTo { return $this->belongsTo(User::class, 'student_id'); }
+    protected $casts = ['date' => 'date'];
+
+    public function schedule(): BelongsTo
+    {
+        return $this->belongsTo(Schedule::class);
+    }
+
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'student_id');
+    }
+
+    public function markedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'marked_by');
+    }
 }

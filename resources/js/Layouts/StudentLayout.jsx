@@ -10,6 +10,7 @@ export default function StudentLayout({ children }) {
         // { label: 'My schedule', href: route('student.schedule.index'), active: route().current('student.schedule.*') },
         // { label: 'Attendance', href: route('student.attendance.index'), active: route().current('student.attendance.*') },
         // { label: 'Notifications', href: route('student.notifications.index'), active: route().current('student.notifications.*') },
+        { label: 'Absences', href: route('student.absences.index'), active: route().current('student.absences.*') },
     ];
 
     const initials = auth.user.name
@@ -24,9 +25,9 @@ export default function StudentLayout({ children }) {
             <nav className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur">
                 <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-8">
-                        <Link href={route('teacher.dashboard')} className="flex items-center gap-2 font-semibold text-slate-900">
-                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-sm text-white">T</span>
-                            <span className="hidden sm:inline">Teacher</span>
+                        <Link href={route('student.dashboard')} className="flex items-center gap-2 font-semibold text-slate-900">
+                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-sm text-white">S</span>
+                            <span className="hidden sm:inline">Student</span>
                         </Link>
 
                         <div className="hidden items-center gap-1 sm:flex">
@@ -37,7 +38,7 @@ export default function StudentLayout({ children }) {
                                     className={
                                         'rounded-lg px-3 py-2 text-sm font-medium transition ' +
                                         (l.active
-                                            ? 'bg-emerald-50 text-emerald-700'
+                                            ? 'bg-indigo-50 text-indigo-700'
                                             : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900')
                                     }
                                 >
@@ -83,7 +84,7 @@ export default function StudentLayout({ children }) {
                                 href={l.href}
                                 className={
                                     'block rounded-lg px-3 py-2 text-sm font-medium ' +
-                                    (l.active ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600')
+                                    (l.active ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600')
                                 }
                             >
                                 {l.label}

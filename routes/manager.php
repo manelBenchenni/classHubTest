@@ -9,7 +9,7 @@ use App\Http\Controllers\Manager\RoomController;
 
 
 
-    Route::middleware(['auth', 'active', 'role:principal_manager,secondary_manager'])
+    Route::middleware(['auth', 'active', 'role:principal_manager,secondary_manager', 'password.changed'])
     ->prefix('manager')
     ->name('manager.')
     ->group(function () {

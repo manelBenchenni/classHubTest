@@ -120,8 +120,8 @@ class User extends Authenticatable
     {
         return match (true) {
             $this->isManager() => 'manager.dashboard',
-            // $this->isTeacher() => 'teacher.dashboard',
-            // $this->isStudent() => 'student.dashboard',
+            $this->isTeacher() => 'teacher.dashboard',
+            $this->isStudent() => 'student.dashboard',
             default => 'manager.dashboard', // temporary fallback until those exist
         };
     }

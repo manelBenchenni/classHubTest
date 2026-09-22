@@ -17,7 +17,7 @@ Route::get('/', function () {
  */
 Route::get('/dashboard', function () {
     return redirect()->route(Auth::user()->dashboardRouteName());
-})->middleware(['auth'])->name('dashboard');
+})->middleware(['auth', 'password.changed'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -27,3 +27,5 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__.'/auth.php';
 require __DIR__.'/manager.php';
+require __DIR__.'/teacher.php';
+require __DIR__.'/student.php';

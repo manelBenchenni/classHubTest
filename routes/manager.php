@@ -20,7 +20,7 @@ use App\Http\Controllers\Manager\RoomAttendanceController;
         Route::patch('users/{user}/accept', [UserController::class, 'accept'])->name('users.accept');
         Route::patch('users/{user}/reject', [UserController::class, 'reject'])->name('users.reject');
         Route::patch('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
-        Route::get('rooms/{room}/attendance', [RoomAttendanceController::class, 'index'])->name('rooms.attendance');
+        Route::get('rooms/{room}/attendance', [RoomAttendanceController::class, 'index'])->middleware('can:view')->name('rooms.attendance');
 
 
         Route::resource('rooms', RoomController::class)->except(['create', 'edit', 'show']);

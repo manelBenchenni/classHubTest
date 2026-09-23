@@ -1,5 +1,5 @@
 import ManagerLayout from '@/Layouts/ManagerLayout';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
 const inputCls =
@@ -74,20 +74,28 @@ export default function Index({ rooms }) {
                                             </td>
                                             <td className="whitespace-nowrap px-4 py-3 text-right">
                                                 {auth.user.can.update && (
-                                                    <>
-                                                        <button
-                                                            onClick={() => setAssigningRoom(room)}
-                                                            className="rounded-md px-2 py-1 text-sm font-medium text-emerald-600 hover:bg-emerald-50"
-                                                        >
-                                                            Assign student
-                                                        </button>
-                                                        <button
-                                                            onClick={() => setEditingRoom(room)}
-                                                            className="rounded-md px-2 py-1 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
-                                                        >
-                                                            Edit
-                                                        </button>
-                                                    </>
+                                                    <button
+                                                        onClick={() => setAssigningRoom(room)}
+                                                        className="rounded-md px-2 py-1 text-sm font-medium text-emerald-600 hover:bg-emerald-50"
+                                                    >
+                                                        Assign student
+                                                    </button>
+                                                )}
+                                                {auth.user.can.view && (
+                                                    <Link
+                                                        href={route('manager.rooms.attendance', room.id)}
+                                                        className="rounded-md px-2 py-1 text-sm font-medium text-slate-600 hover:bg-slate-100"
+                                                    >
+                                                        Attendance
+                                                    </Link>
+                                                )}
+                                                {auth.user.can.update && (
+                                                    <button
+                                                        onClick={() => setEditingRoom(room)}
+                                                        className="rounded-md px-2 py-1 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
+                                                    >
+                                                        Edit
+                                                    </button>
                                                 )}
                                                 {auth.user.can.delete && (
                                                     <button

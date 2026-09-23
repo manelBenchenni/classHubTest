@@ -50,7 +50,7 @@ class DatabaseSeeder extends Seeder
         return User::create([
             'name' => 'Manel BenChenni',
             'email' => 'manelmbenchenni@gmail.com',
-            'password' => Hash::make("password 123"),
+            'password' => Hash::make(self::DEMO_PASSWORD),
             'role' => Role::PrincipalManager,
             'status' => UserStatus::Active,
             'must_change_password' => false,

@@ -66,6 +66,21 @@ and blocking on students alone prevents leaving students without a room.
 ### Weekly schedule recap email
 Sent via a scheduled Artisan command (`php artisan classhub:send-weekly-recaps`), not triggered on schedule creation. This guarantees **exactly one email per teacher per week**, listing every slot they have, rather than one email per slot created — the command is scheduled to run every Monday at 06:00 via `routes/console.php` (`Schedule::command(...)->weekly()->mondays()->at('06:00')`).
 
+### Sending emails
+
+All emails are sent through the queue (`QUEUE_CONNECTION=database`), so HTTP
+responses are never slowed down by SMTP. Start the worker with
+`php artisan queue:work`.
+
+| Mailable | Sent when | Recipient |
+| --- | --- | --- |
+| `WelcomeEmail` | A manager creates an account. Contains the temporary password, which must be changed at first login. | New user |
+| `AccountActivatedMail` | A manager accepts a pending registration. | Teacher or student |
+| `RoomAssignedMail` | A student is assigned or moved to a room. | Student |
+| `WeeklyScheduleRecap` | Once per week, one summary email (not one per slot). | Teacher |
+
+Emails were tested with Mailpit (SMTP )
+
 ### Public registration & approval
 A self-registered teacher or student is created with `status = pending` and cannot log in (enforced by `EnsureUserIsActive` middleware, which checks status on every authenticated request — not just at login — so a session opened before an account is disabled/rejected is also cut off mid-session). A manager can accept (→ `active`, with an activation email) or reject (→ `rejected`, account retained for audit but permanently unable to log in) a pending account.
 
@@ -132,9 +147,13 @@ DB_PASSWORD=
 
 ```
 MAIL_MAILER=smtp
-MAIL_HOST=127.0.0.1
+MAIL_HOST=smtp.gmail.com
 MAIL_PORT=1025
 MAIL_ENCRYPTION=null
+MAIl_USERNAME=
+MAIL_PASSWORD=
+MAIL_FROM_ADDRESS=
+MAIL_FROM_NAME=
 ```
 View sent emails at `http://127.0.0.1:8025`.
 

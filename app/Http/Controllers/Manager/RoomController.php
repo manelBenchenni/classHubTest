@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\RoomAssignedMail;
 use App\Models\Room;
 use App\Models\User;
+use App\Notifications\RoomAssigned;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -121,6 +122,7 @@ class RoomController extends Controller
             $student->update(['room_id' => $lockedRoom->id]);
 
             Mail::to($student)->queue(new RoomAssignedMail($student, $lockedRoom));
+            $student->notify(new RoomAssigned($lockedRoom));
         });
 
         return back()->with('status', 'Student assigned.');

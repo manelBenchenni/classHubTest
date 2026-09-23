@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Teacher;
 
+use App\Enums\AttendanceStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Schedule;
+use App\Notifications\AbsenceRecorded;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -97,7 +99,7 @@ class AttendanceController extends Controller
                 continue; // silently skip anyone not actually in this room — defence in depth
             }
 
-            Attendance::updateOrCreate(
+            $attendance = Attendance::updateOrCreate(
                 [
                     'schedule_id' => $schedule->id,
                     'student_id' => $entry['student_id'],
@@ -108,6 +110,13 @@ class AttendanceController extends Controller
                     'marked_by' => $teacher->id,
                 ]
             );
+
+            // Only notify on an actual absence — point 9 of the subject asks
+            // for a notification when an absence is recorded, not on every
+            // status write (marking someone present shouldn't ping them).
+            if ($attendance->status === AttendanceStatus::Absent) {
+                $attendance->student->notify(new AbsenceRecorded($attendance));
+            }
         }
 
         return back()->with('status', 'Attendance saved.');

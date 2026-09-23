@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Room;
 use App\Models\Schedule;
 use App\Models\User;
+use App\Notifications\ScheduleChanged;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -37,7 +38,9 @@ class ScheduleController extends Controller
 
         $validated = $this->validateSchedule($request);
 
-        Schedule::create($validated);
+        $schedule = Schedule::create($validated);
+
+        $schedule->teacher->notify(new ScheduleChanged($schedule, 'created'));
 
         return back()->with('status', 'Schedule slot created.');
     }
@@ -49,6 +52,8 @@ class ScheduleController extends Controller
         $validated = $this->validateSchedule($request, $schedule);
 
         $schedule->update($validated);
+
+        $schedule->teacher->notify(new ScheduleChanged($schedule, 'updated'));
 
         return back()->with('status', 'Schedule slot updated.');
     }

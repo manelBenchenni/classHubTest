@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import NotificationBell from '@/Components/NotificationBell';
 
 export default function ManagerLayout({ children }) {
     const { auth } = usePage().props;
@@ -24,6 +25,7 @@ export default function ManagerLayout({ children }) {
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900">
+            <NotificationBell />
             <nav className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur">
                 <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-8">

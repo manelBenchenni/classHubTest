@@ -86,8 +86,6 @@ export default function Index({ users, filters, rooms }) {
         }
     };
 
-    // --- Status actions -----------------------------------------------
-
     const acceptUser = (user) => {
         router.patch(route('manager.users.accept', user.id), {}, { preserveScroll: true });
     };
@@ -119,12 +117,14 @@ export default function Index({ users, filters, rooms }) {
                         <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
                         <p className="mt-1 text-sm text-slate-500">Create, review and manage accounts.</p>
                     </div>
-                    <button
-                        onClick={() => setShowCreate(true)}
-                        className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    >
-                        Create user
-                    </button>
+                    {auth.user.can.create && (
+                        <button
+                            onClick={() => setShowCreate(true)}
+                            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        >
+                            Create user
+                        </button>
+                    )}
                 </div>
 
                 {/* Filters */}
@@ -223,7 +223,7 @@ export default function Index({ users, filters, rooms }) {
                                                 )}
                                             </td>
                                             <td className="whitespace-nowrap px-4 py-3 text-right">
-                                                {user.status === 'pending' && manageable && (
+                                                {user.status === 'pending' && manageable && auth.user.can.update && (
                                                     <>
                                                         <button
                                                             onClick={() => acceptUser(user)}
@@ -242,7 +242,8 @@ export default function Index({ users, filters, rooms }) {
 
                                                 {(user.status === 'active' || user.status === 'disabled') &&
                                                     user.role !== 'principal_manager' &&
-                                                    manageable && (
+                                                    manageable &&
+                                                    auth.user.can.update && (
                                                         <button
                                                             onClick={() => toggleStatus(user)}
                                                             className={
@@ -254,7 +255,7 @@ export default function Index({ users, filters, rooms }) {
                                                         </button>
                                                     )}
 
-                                                {user.role === 'student' && (
+                                                {user.role === 'student' && auth.user.can.update && (
                                                     <button
                                                         onClick={() => setAssigningStudent(user)}
                                                         className="rounded-md px-2 py-1 text-sm font-medium text-emerald-600 hover:bg-emerald-50"
@@ -263,7 +264,7 @@ export default function Index({ users, filters, rooms }) {
                                                     </button>
                                                 )}
 
-                                                {manageable && (
+                                                {manageable && auth.user.can.update && (
                                                     <button
                                                         onClick={() => setEditingUser(user)}
                                                         className="rounded-md px-2 py-1 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
@@ -272,7 +273,7 @@ export default function Index({ users, filters, rooms }) {
                                                     </button>
                                                 )}
 
-                                                {user.role !== 'principal_manager' && manageable && (
+                                                {user.role !== 'principal_manager' && manageable && auth.user.can.delete && (
                                                     <button
                                                         onClick={() => destroy(user)}
                                                         className="rounded-md px-2 py-1 text-sm font-medium text-rose-600 hover:bg-rose-50"
@@ -299,7 +300,6 @@ export default function Index({ users, filters, rooms }) {
                         </table>
                     </div>
 
-                    {/* Footer / pagination */}
                     {(users.total > 0 || users.links.length > 3) && (
                         <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 sm:flex-row">
                             <div className="text-xs text-slate-500">
@@ -459,12 +459,6 @@ function EditUserModal({ user, onClose }) {
     );
 }
 
-/**
- * Assign, change, or remove the room for one student, from their own row.
- * Reuses the same backend endpoint as the Rooms page
- * (PATCH manager/rooms/{room}/assign-student), just with the student
- * chosen first and the room picked second.
- */
 function AssignRoomModal({ student, rooms, onClose }) {
     const { data, setData, patch, processing, errors, reset } = useForm({
         student_id: student.id,

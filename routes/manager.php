@@ -4,8 +4,8 @@ use App\Http\Controllers\Manager\DashboardController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Manager\UserController;
 use App\Http\Controllers\Manager\RoomController;
-
-   use App\Http\Controllers\Manager\ScheduleController;
+use App\Http\Controllers\Manager\ScheduleController;
+use App\Http\Controllers\Manager\RoomAttendanceController;
 
 
 
@@ -20,6 +20,7 @@ use App\Http\Controllers\Manager\RoomController;
         Route::patch('users/{user}/accept', [UserController::class, 'accept'])->name('users.accept');
         Route::patch('users/{user}/reject', [UserController::class, 'reject'])->name('users.reject');
         Route::patch('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+        Route::get('rooms/{room}/attendance', [RoomAttendanceController::class, 'index'])->name('rooms.attendance');
 
 
         Route::resource('rooms', RoomController::class)->except(['create', 'edit', 'show']);

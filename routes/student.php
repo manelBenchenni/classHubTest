@@ -12,4 +12,5 @@ Route::middleware(['auth', 'active', 'role:student', 'password.changed'])
 
         
 Route::get('/absences', AttendanceHistoryController::class)->name('absences.index');
+
     });

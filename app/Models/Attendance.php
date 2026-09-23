@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AttendanceStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -9,7 +10,10 @@ class Attendance extends Model
 {
     protected $fillable = ['schedule_id', 'student_id', 'date', 'status', 'marked_by'];
 
-    protected $casts = ['date' => 'date'];
+    protected $casts = [
+        'date' => 'date',
+        'status' => AttendanceStatus::class,
+    ];
 
     public function schedule(): BelongsTo
     {

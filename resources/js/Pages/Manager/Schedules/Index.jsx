@@ -1,5 +1,5 @@
 import ManagerLayout from '@/Layouts/ManagerLayout';
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
 const inputCls =
@@ -16,6 +16,7 @@ const dayLabels = {
 };
 
 export default function Index({ schedules, rooms, teachers }) {
+    const { auth } = usePage().props;
     const [showCreate, setShowCreate] = useState(false);
     const [editingSchedule, setEditingSchedule] = useState(null);
 
@@ -25,7 +26,6 @@ export default function Index({ schedules, rooms, teachers }) {
         }
     };
 
-    // Group by day so the page reads like a weekly timetable
     const byDay = schedules.reduce((acc, s) => {
         (acc[s.day_of_week] ??= []).push(s);
         return acc;
@@ -41,12 +41,14 @@ export default function Index({ schedules, rooms, teachers }) {
                         <h1 className="text-2xl font-semibold tracking-tight">Schedules</h1>
                         <p className="mt-1 text-sm text-slate-500">Weekly time slots, by room and teacher.</p>
                     </div>
-                    <button
-                        onClick={() => setShowCreate(true)}
-                        className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    >
-                        Create slot
-                    </button>
+                    {auth.user.can.create && (
+                        <button
+                            onClick={() => setShowCreate(true)}
+                            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        >
+                            Create slot
+                        </button>
+                    )}
                 </div>
 
                 <div className="space-y-6">
@@ -80,18 +82,22 @@ export default function Index({ schedules, rooms, teachers }) {
                                                     <td className="px-4 py-2 text-slate-700">{s.teacher?.name}</td>
                                                     <td className="px-4 py-2 text-slate-700">{s.room?.name}</td>
                                                     <td className="whitespace-nowrap px-4 py-2 text-right">
-                                                        <button
-                                                            onClick={() => setEditingSchedule(s)}
-                                                            className="rounded-md px-2 py-1 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
-                                                        >
-                                                            Edit
-                                                        </button>
-                                                        <button
-                                                            onClick={() => destroy(s)}
-                                                            className="rounded-md px-2 py-1 text-sm font-medium text-rose-600 hover:bg-rose-50"
-                                                        >
-                                                            Delete
-                                                        </button>
+                                                        {auth.user.can.update && (
+                                                            <button
+                                                                onClick={() => setEditingSchedule(s)}
+                                                                className="rounded-md px-2 py-1 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                        )}
+                                                        {auth.user.can.delete && (
+                                                            <button
+                                                                onClick={() => destroy(s)}
+                                                                className="rounded-md px-2 py-1 text-sm font-medium text-rose-600 hover:bg-rose-50"
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                        )}
                                                     </td>
                                                 </tr>
                                             ))}
@@ -127,12 +133,6 @@ export default function Index({ schedules, rooms, teachers }) {
     );
 }
 
-/**
- * Handles both create and edit: pass `schedule` to edit an existing slot,
- * omit it to create a new one. Conflict errors (teacher_id / room_id) come
- * back from the controller's overlap check and render like any other
- * validation error.
- */
 function ScheduleModal({ title, schedule, rooms, teachers, onClose }) {
     const isEditing = Boolean(schedule);
 

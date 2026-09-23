@@ -7,14 +7,12 @@ export default function ManagerLayout({ children }) {
     const isPrincipal = auth.user.role === 'principal_manager';
     const [open, setOpen] = useState(false);
 
-    const links = [
-        { label: 'Dashboard', href: route('manager.dashboard'), active: route().current('manager.dashboard') },
-        { label: 'Users', href: route('manager.users.index'), active: route().current('manager.users.*') },
-        // Uncomment once these route groups exist:
-        // { label: 'Rooms', href: route('manager.rooms.index'), active: route().current('manager.rooms.*') },
-        // { label: 'Schedules', href: route('manager.schedules.index'), active: route().current('manager.schedules.*') },
-        // ...(isPrincipal ? [{ label: 'Secondary managers', href: route('manager.permissions.index'), active: route().current('manager.permissions.*') }] : []),
-    ];
+   const links = [
+    { label: 'Dashboard', href: route('manager.dashboard'), active: route().current('manager.dashboard') },
+    { label: 'Users', href: route('manager.users.index'), active: route().current('manager.users.*') },
+    { label: 'Rooms', href: route('manager.rooms.index'), active: route().current('manager.rooms.*') },
+    { label: 'Schedules', href: route('manager.schedules.index'), active: route().current('manager.schedules.*') },
+];
 
     const initials = auth.user.name
         .split(' ')

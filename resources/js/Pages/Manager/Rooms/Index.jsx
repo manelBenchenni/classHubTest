@@ -1,11 +1,12 @@
 import ManagerLayout from '@/Layouts/ManagerLayout';
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
 const inputCls =
     'w-full rounded-lg border-slate-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500';
 
 export default function Index({ rooms }) {
+    const { auth } = usePage().props;
     const [showCreate, setShowCreate] = useState(false);
     const [editingRoom, setEditingRoom] = useState(null);
     const [assigningRoom, setAssigningRoom] = useState(null);
@@ -31,12 +32,14 @@ export default function Index({ rooms }) {
                         <h1 className="text-2xl font-semibold tracking-tight">Rooms</h1>
                         <p className="mt-1 text-sm text-slate-500">Create rooms and assign students to them.</p>
                     </div>
-                    <button
-                        onClick={() => setShowCreate(true)}
-                        className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    >
-                        Create room
-                    </button>
+                    {auth.user.can.create && (
+                        <button
+                            onClick={() => setShowCreate(true)}
+                            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        >
+                            Create room
+                        </button>
+                    )}
                 </div>
 
                 <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
@@ -70,24 +73,30 @@ export default function Index({ rooms }) {
                                                 </span>
                                             </td>
                                             <td className="whitespace-nowrap px-4 py-3 text-right">
-                                                <button
-                                                    onClick={() => setAssigningRoom(room)}
-                                                    className="rounded-md px-2 py-1 text-sm font-medium text-emerald-600 hover:bg-emerald-50"
-                                                >
-                                                    Assign student
-                                                </button>
-                                                <button
-                                                    onClick={() => setEditingRoom(room)}
-                                                    className="rounded-md px-2 py-1 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={() => destroy(room)}
-                                                    className="rounded-md px-2 py-1 text-sm font-medium text-rose-600 hover:bg-rose-50"
-                                                >
-                                                    Delete
-                                                </button>
+                                                {auth.user.can.update && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => setAssigningRoom(room)}
+                                                            className="rounded-md px-2 py-1 text-sm font-medium text-emerald-600 hover:bg-emerald-50"
+                                                        >
+                                                            Assign student
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setEditingRoom(room)}
+                                                            className="rounded-md px-2 py-1 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
+                                                        >
+                                                            Edit
+                                                        </button>
+                                                    </>
+                                                )}
+                                                {auth.user.can.delete && (
+                                                    <button
+                                                        onClick={() => destroy(room)}
+                                                        className="rounded-md px-2 py-1 text-sm font-medium text-rose-600 hover:bg-rose-50"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     );
@@ -217,11 +226,6 @@ function EditRoomModal({ room, onClose }) {
     );
 }
 
-/**
- * Minimal version: the student id is typed in directly. Swap the input for a
- * searchable select (fed by a small "unassigned students" endpoint) once the
- * rest of the flow works — not required for the test to function correctly.
- */
 function AssignStudentModal({ room, onClose }) {
     const { data, setData, patch, processing, errors, reset } = useForm({
         student_id: '',
